@@ -191,5 +191,95 @@ def generate_sample_dashboard_stats() -> Dict:
             "running": True,
             "last_check": (datetime.now() - timedelta(hours=random.randint(1, 2))).isoformat()
         },
+        "user_analytics": {
+            "users_tracked": random.randint(10, 50),
+            "running": True,
+            "last_analysis": (datetime.now() - timedelta(minutes=random.randint(5, 30))).isoformat()
+        },
         "timestamp": datetime.now().isoformat()
     }
+
+
+def generate_sample_user_analytics(count: int = 20) -> Dict:
+    """Generate sample user analytics data."""
+    users = [
+        "alice@example.com",
+        "bob@example.com",
+        "charlie@example.com",
+        "diana@example.com",
+        "eve@example.com",
+        "frank@example.com",
+        "grace@example.com",
+        "henry@example.com",
+        "ivy@example.com",
+        "jack@example.com",
+    ]
+    
+    user_metrics = {}
+    base_time = datetime.now()
+    
+    for i, user_name in enumerate(users[:count]):
+        total_events = random.randint(10, 500)
+        activity_score = random.uniform(50, 500)
+        
+        user_metrics[user_name] = {
+            "user_name": user_name,
+            "user_arn": f"arn:aws:iam::123456789012:user/{user_name}",
+            "total_events": total_events,
+            "read_events": int(total_events * random.uniform(0.6, 0.9)),
+            "write_events": total_events - int(total_events * random.uniform(0.6, 0.9)),
+            "high_risk_events": random.randint(0, 10),
+            "services_used": random.sample(["EC2", "S3", "RDS", "Lambda", "CloudFront", "ECS"], random.randint(2, 5)),
+            "regions_used": random.sample(["us-east-1", "us-west-2", "eu-west-1"], random.randint(1, 3)),
+            "first_seen": (base_time - timedelta(days=random.randint(30, 90))).isoformat(),
+            "last_seen": (base_time - timedelta(days=random.randint(0, 7))).isoformat(),
+            "event_types": {
+                "RunInstances": random.randint(5, 50),
+                "CreateBucket": random.randint(1, 10),
+                "PutObject": random.randint(10, 100),
+            },
+            "error_count": random.randint(0, 5),
+            "activity_score": round(activity_score, 2)
+        }
+    
+    return user_metrics
+
+
+def generate_sample_user_costs(count: int = 20) -> Dict:
+    """Generate sample user cost attribution data."""
+    users = [
+        "alice@example.com",
+        "bob@example.com",
+        "charlie@example.com",
+        "diana@example.com",
+        "eve@example.com",
+        "frank@example.com",
+        "grace@example.com",
+        "henry@example.com",
+        "ivy@example.com",
+        "jack@example.com",
+    ]
+    
+    user_costs = {}
+    
+    for i, user_name in enumerate(users[:count]):
+        total_cost = random.uniform(100, 5000)
+        
+        user_costs[user_name] = {
+            "user_name": user_name,
+            "total_cost": round(total_cost, 2),
+            "service_costs": {
+                "EC2": round(total_cost * random.uniform(0.3, 0.6), 2),
+                "S3": round(total_cost * random.uniform(0.1, 0.3), 2),
+                "RDS": round(total_cost * random.uniform(0.1, 0.2), 2),
+            },
+            "region_costs": {
+                "us-east-1": round(total_cost * random.uniform(0.5, 0.8), 2),
+                "us-west-2": round(total_cost * random.uniform(0.1, 0.3), 2),
+            },
+            "cost_by_date": {},
+            "resource_count": random.randint(5, 50),
+            "cost_per_resource": round(total_cost / random.randint(5, 50), 2)
+        }
+    
+    return user_costs

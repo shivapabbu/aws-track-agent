@@ -211,6 +211,7 @@ async def get_dashboard_stats():
     """Get dashboard statistics."""
     cloudtrail_agent = orchestrator.get_agent("cloudtrail")
     cost_agent = orchestrator.get_agent("cost")
+    user_analytics_agent = orchestrator.get_agent("user_analytics")
     
     stats = {
         "cloudtrail": {
@@ -223,10 +224,121 @@ async def get_dashboard_stats():
             "running": cost_agent.running if cost_agent else False,
             "last_check": cost_agent.last_check_time.isoformat() if cost_agent and cost_agent.last_check_time else None
         },
+        "user_analytics": {
+            "users_tracked": len(user_analytics_agent.user_metrics) if user_analytics_agent and hasattr(user_analytics_agent, 'user_metrics') else 0,
+            "running": user_analytics_agent.running if user_analytics_agent else False,
+            "last_analysis": user_analytics_agent.last_analysis_time.isoformat() if user_analytics_agent and user_analytics_agent.last_analysis_time else None
+        },
         "timestamp": datetime.utcnow().isoformat()
     }
     
     return stats
+
+
+@app.get("/api/users/analytics")
+async def get_user_analytics(limit: int = 100):
+    """Get user-level analytics - who is using AWS and how much."""
+    user_analytics_agent = orchestrator.get_agent("user_analytics")
+    if not user_analytics_agent:
+        raise HTTPException(status_code=404, detail="User Analytics agent not found")
+    
+    return {
+        "users": user_analytics_agent.user_metrics if hasattr(user_analytics_agent, 'user_metrics') else {},
+        "count": len(user_analytics_agent.user_metrics) if hasattr(user_analytics_agent, 'user_metrics') else 0
+    }
+
+
+@app.get("/api/users/top-by-usage")
+async def get_top_users_by_usage(limit: int = 10):
+    """Get top users by activity/usage."""
+    user_analytics_agent = orchestrator.get_agent("user_analytics")
+    if not user_analytics_agent:
+        raise HTTPException(status_code=404, detail="User Analytics agent not found")
+    
+    top_users = user_analytics_agent.get_top_users_by_usage(limit) if hasattr(user_analytics_agent, 'get_top_users_by_usage') else []
+    return {
+        "users": top_users,
+        "count": len(top_users)
+    }
+
+
+@app.get("/api/users/top-by-cost")
+async def get_top_users_by_cost(limit: int = 10):
+    """Get top users by cost attribution."""
+    user_analytics_agent = orchestrator.get_agent("user_analytics")
+    if not user_analytics_agent:
+        raise HTTPException(status_code=404, detail="User Analytics agent not found")
+    
+    top_users = user_analytics_agent.get_top_users_by_cost(limit) if hasattr(user_analytics_agent, 'get_top_users_by_cost') else []
+    return {
+        "users": top_users,
+        "count": len(top_users)
+    }
+
+
+@app.get("/api/users/inactive")
+async def get_inactive_users(days: int = 30):
+    """Get users who haven't been active recently."""
+    user_analytics_agent = orchestrator.get_agent("user_analytics")
+    if not user_analytics_agent:
+        raise HTTPException(status_code=404, detail="User Analytics agent not found")
+    
+    inactive = user_analytics_agent.get_inactive_users(days) if hasattr(user_analytics_agent, 'get_inactive_users') else []
+    return {
+        "users": inactive,
+        "count": len(inactive),
+        "days_threshold": days
+    }
+
+
+@app.get("/api/users/{user_name}")
+async def get_user_details(user_name: str):
+    """Get detailed usage summary for a specific user."""
+    user_analytics_agent = orchestrator.get_agent("user_analytics")
+    if not user_analytics_agent:
+        raise HTTPException(status_code=404, detail="User Analytics agent not found")
+    
+    # Get user summary
+    summary = user_analytics_agent.user_summaries.get(user_name) if hasattr(user_analytics_agent, 'user_summaries') else None
+    
+    # Get user metrics
+    metrics = user_analytics_agent.user_metrics.get(user_name) if hasattr(user_analytics_agent, 'user_metrics') else None
+    
+    # Get user costs
+    costs = user_analytics_agent.user_costs.get(user_name) if hasattr(user_analytics_agent, 'user_costs') else None
+    
+    if not summary and not metrics:
+        raise HTTPException(status_code=404, detail=f"User '{user_name}' not found")
+    
+    return {
+        "user_name": user_name,
+        "summary": summary,
+        "metrics": metrics,
+        "costs": costs
+    }
+
+
+@app.post("/api/users/analyze")
+async def trigger_user_analysis():
+    """Manually trigger user analytics analysis from CloudTrail events."""
+    user_analytics_agent = orchestrator.get_agent("user_analytics")
+    cloudtrail_agent = orchestrator.get_agent("cloudtrail")
+    
+    if not user_analytics_agent:
+        raise HTTPException(status_code=404, detail="User Analytics agent not found")
+    if not cloudtrail_agent:
+        raise HTTPException(status_code=404, detail="CloudTrail agent not found")
+    
+    # Get events from CloudTrail agent
+    events = cloudtrail_agent.suspicious_events if hasattr(cloudtrail_agent, 'suspicious_events') else []
+    
+    # Process events for analytics
+    await user_analytics_agent.process_events_for_analytics(events)
+    
+    return {
+        "message": "User analysis completed",
+        "users_analyzed": len(user_analytics_agent.user_metrics) if hasattr(user_analytics_agent, 'user_metrics') else 0
+    }
 
 
 if __name__ == "__main__":

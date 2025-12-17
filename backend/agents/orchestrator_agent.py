@@ -4,6 +4,7 @@ import asyncio
 from strands_agents import Agent
 from agents.cloudtrail_monitoring_agent import CloudTrailMonitoringAgent
 from agents.cost_anomaly_agent import CostAnomalyDetectionAgent
+from agents.user_analytics_agent import UserAnalyticsAgent
 from config import settings
 
 
@@ -22,10 +23,12 @@ class OrchestratorAgent(Agent):
         # Initialize specialized agents
         self.cloudtrail_agent = CloudTrailMonitoringAgent()
         self.cost_agent = CostAnomalyDetectionAgent()
+        self.user_analytics_agent = UserAnalyticsAgent()
         
         self.agents = {
             "cloudtrail": self.cloudtrail_agent,
-            "cost": self.cost_agent
+            "cost": self.cost_agent,
+            "user_analytics": self.user_analytics_agent
         }
         
         self.running = False
@@ -52,6 +55,12 @@ class OrchestratorAgent(Agent):
         )
         self.tasks.append(cost_task)
         
+        # Start User Analytics
+        user_analytics_task = asyncio.create_task(
+            self.user_analytics_agent.analyze_continuously()
+        )
+        self.tasks.append(user_analytics_task)
+        
         print(f"[{self.name}] All agents started")
     
     async def stop_all_agents(self):
@@ -66,6 +75,7 @@ class OrchestratorAgent(Agent):
         # Stop individual agents
         self.cloudtrail_agent.stop()
         self.cost_agent.stop()
+        self.user_analytics_agent.stop()
         
         # Cancel tasks
         for task in self.tasks:

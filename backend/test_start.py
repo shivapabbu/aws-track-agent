@@ -28,10 +28,13 @@ try:
     print("4. Testing agents...")
     cloudtrail_agent = orchestrator.get_agent("cloudtrail")
     cost_agent = orchestrator.get_agent("cost")
+    user_analytics_agent = orchestrator.get_agent("user_analytics")
     assert cloudtrail_agent is not None
     assert cost_agent is not None
+    assert user_analytics_agent is not None
     print(f"   ✅ CloudTrail agent: {cloudtrail_agent.name}")
     print(f"   ✅ Cost agent: {cost_agent.name}")
+    print(f"   ✅ User Analytics agent: {user_analytics_agent.name}")
     
     print("\n" + "=" * 60)
     print("✅ All tests passed! Backend is ready to run.")
